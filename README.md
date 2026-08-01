@@ -1,3 +1,5 @@
+[![basher install](https://www.basher.it/assets/logo/basher_install.svg)](https://www.basher.it/package/)
+
 # gloncher
 
 Launch several programs at once and watch them in one terminal screen.
@@ -29,7 +31,17 @@ queue ───────────────────────  sch
 
 ## Install
 
-Download a binary from the releases, or build from source:
+With [basher](https://www.basher.it):
+
+```sh
+basher install pforret/gloncher
+```
+
+Basher puts `gloncher` on your PATH. Prebuilt binaries for macOS, Linux and
+Windows are committed to the repo, so this needs no Go toolchain. On any other
+platform the first run builds one, which does need Go.
+
+Or download a binary from the releases, or build from source:
 
 ```sh
 git clone https://github.com/pforret/gloncher
@@ -37,13 +49,17 @@ cd gloncher
 make build          # produces ./gloncher
 ```
 
-`gloncher.sh` detects the OS and architecture and runs the matching binary from
-the release bundle, so you can ship one directory that works everywhere:
+`bin/gloncher` (also reachable as `gloncher.sh` at the repo root) detects the
+OS and architecture and runs the matching binary, so you can ship one directory
+that works everywhere:
 
 ```sh
 make release        # dist/gloncher-darwin-arm64, -linux-amd64, -windows-amd64.exe, …
 ./gloncher.sh my-app.ini
 ```
+
+In a source checkout with Go installed, `./gloncher.sh` builds the binary on
+first use, so it works straight after a clone with no build step.
 
 ## The INI file
 
@@ -161,6 +177,19 @@ pane filtered to `ERROR` stays dark until something actually breaks.
 process group, so the things they spawn — `php artisan serve`'s PHP process,
 `npm run dev`'s bundler — go down too instead of being orphaned. After the
 screen is restored, gloncher prints how each program ended.
+
+## Releasing
+
+`binaries/` holds the prebuilt binaries that ship in the repo. Rebuild them
+whenever you cut a version, and commit the result:
+
+```sh
+make binaries      # binaries/gloncher-<os>-<arch>, ~11 MB for the five targets
+make release       # a standalone dist/ bundle, not committed
+```
+
+Every rebuild adds a fresh copy of all five to git history, so do it on version
+bumps rather than on every change.
 
 ## Flags
 

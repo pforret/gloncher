@@ -76,9 +76,28 @@ and `npm run dev` both spawn grandchildren that outlive a plain `Kill()` on the 
 
 ## Build & distribution
 
-Cross-compiled to darwin/amd64, darwin/arm64, windows/amd64, linux/amd64. A companion
-`gloncher.sh` detects the host OS/arch and execs the matching binary, so the release layout and
-the names `gloncher.sh` expects must stay in sync — change one, change the other.
+Cross-compiled to darwin/{amd64,arm64}, linux/{amd64,arm64} and windows/amd64. `bin/gloncher`
+detects the host OS/arch and execs the matching binary, so the release layout and the names that
+script expects must stay in sync — change one, change the other. `gloncher.sh` at the repo root is
+a symlink to it, kept because the original spec and the docs name it.
+
+The launcher lives in `bin/` so `basher install pforret/gloncher` exposes it as `gloncher`. Basher
+installs by symlinking the script onto PATH, so it resolves its own symlink chain (hand-rolled;
+`readlink -f` is not portable to older macOS) before looking for binaries — `${BASH_SOURCE[0]}`
+alone points at basher's bin directory, not the repo. It also refuses to exec anything that is
+`-ef` itself, because release bundles symlink `dist/gloncher` back to the script.
+
+`binaries/` holds prebuilt binaries committed to the repo, so `basher install` and a plain clone
+work with no Go toolchain — basher forbids install hooks, and this is the alternative to building
+at install time. Rebuild with `make binaries` on a version bump, not on every change: each rebuild
+writes ~11 MB of fresh blobs into git history permanently. `make release` builds a standalone
+`dist/` bundle instead, which is not committed.
+
+When no binary is found at all and `go.mod` is present, the launcher builds one and execs it. That
+covers platforms outside the committed matrix.
+
+Search order matters: `$root/$name` (a local `go build` output) wins over `binaries/`, so a
+developer's own build is never shadowed by a stale committed one.
 
 ```sh
 make build                            # ./gloncher
