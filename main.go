@@ -26,6 +26,9 @@ var version = "dev"
 // shutdownGrace bounds how long we wait for children after asking them to stop.
 const shutdownGrace = 5 * time.Second
 
+// defaultTemplateName is what -init writes when given no file name.
+const defaultTemplateName = "gloncher.ini"
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "gloncher:", err)
@@ -47,11 +50,23 @@ func run() error {
 	showVersion := boolFlag("version", "v", "print version and exit")
 	check := boolFlag("check", "c", "parse the INI file and exit")
 	showHelp := boolFlag("help", "h", "print this help and exit")
+	initFile := boolFlag("init", "i", "write a commented template INI file and exit")
 	flag.Usage = usage
 	flag.Parse()
 
 	if *showHelp {
 		usage()
+		return nil
+	}
+	if *initFile {
+		path := defaultTemplateName
+		if flag.NArg() == 1 {
+			path = flag.Arg(0)
+		}
+		if err := config.WriteTemplate(path); err != nil {
+			return err
+		}
+		fmt.Printf("wrote %s — edit it, then run: gloncher %s\n", path, path)
 		return nil
 	}
 	if *showVersion {
@@ -217,6 +232,7 @@ usage:
   gloncher [flags] <name.ini>
 
 flags:
+  -i, --init      write a commented template INI file (default gloncher.ini)
   -c, --check     parse the INI file, print what it would run, and exit
   -v, --version   print version and exit
   -h, --help      print this help and exit

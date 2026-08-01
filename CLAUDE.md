@@ -58,6 +58,19 @@ traps here: a chatty process must not starve rendering (coalesce updates, redraw
 than per line), and shutdown must terminate the whole child process group — `php artisan serve`
 and `npm run dev` both spawn grandchildren that outlive a plain `Kill()` on the parent.
 
+## The template
+
+`config.Template` in `internal/config/template.go` is the file `--init` writes. It lives beside
+the parser deliberately: `TestTemplateParses` both parses it and asserts it still demonstrates a
+filter, a half-width pane, a hidden program, and the restart and quit policies. Rename or drop a
+key and that test fails, so the template cannot quietly drift out of date.
+
+Its sample programs are shell loops, not real commands, so a generated file runs on a bare machine
+— a template whose `on_exit = quit` program is missing would exit instantly and look broken. The
+realistic commands (`php artisan serve`, `npm run dev`) sit next to them as comments.
+
+`WriteTemplate` refuses to overwrite an existing file.
+
 ## Design decisions worth not re-litigating
 
 - **No dependencies.** Everything is stdlib, including terminal sizing (`stty size`) and raw mode

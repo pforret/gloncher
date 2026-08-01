@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -207,5 +208,82 @@ func TestValueMayContainEquals(t *testing.T) {
 	}
 	if got := cfg.Programs[0].Cmd; got != "FOO=1 php artisan serve" {
 		t.Errorf("Cmd = %q", got)
+	}
+}
+
+// The template is the first thing a new user sees, so it must parse, and it
+// must exercise the keys it documents. If a key is renamed and the template
+// is not updated, this fails.
+func TestTemplateParses(t *testing.T) {
+	cfg, err := Parse(strings.NewReader(Template))
+	if err != nil {
+		t.Fatalf("the generated template does not parse: %v", err)
+	}
+	if cfg.Title != "my project" {
+		t.Errorf("Title = %q", cfg.Title)
+	}
+	if len(cfg.Programs) != 5 {
+		t.Fatalf("got %d programs, want 5", len(cfg.Programs))
+	}
+
+	var (
+		sawFilter, sawHalf, sawHidden bool
+		sawRestart, sawQuit           bool
+	)
+	for _, p := range cfg.Programs {
+		if p.Filter != nil {
+			sawFilter = true
+		}
+		if p.Width == WidthHalf {
+			sawHalf = true
+		}
+		if p.Hidden() {
+			sawHidden = true
+		}
+		switch p.OnExit {
+		case ExitRestart:
+			sawRestart = true
+		case ExitQuit:
+			sawQuit = true
+		}
+	}
+	for name, ok := range map[string]bool{
+		"a filtered pane":   sawFilter,
+		"a half-width pane": sawHalf,
+		"a hidden program":  sawHidden,
+		"on_exit = restart": sawRestart,
+		"on_exit = quit":    sawQuit,
+	} {
+		if !ok {
+			t.Errorf("the template no longer demonstrates %s", name)
+		}
+	}
+}
+
+func TestWriteTemplateRefusesToOverwrite(t *testing.T) {
+	path := t.TempDir() + "/existing.ini"
+	if err := os.WriteFile(path, []byte("[mine]\ncmd = precious\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := WriteTemplate(path); err == nil {
+		t.Fatal("WriteTemplate overwrote an existing file")
+	}
+	// The original must be untouched.
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != "[mine]\ncmd = precious\n" {
+		t.Errorf("the existing file was modified: %q", got)
+	}
+}
+
+func TestWriteTemplateThenLoad(t *testing.T) {
+	path := t.TempDir() + "/new.ini"
+	if err := WriteTemplate(path); err != nil {
+		t.Fatalf("WriteTemplate: %v", err)
+	}
+	if _, err := Load(path); err != nil {
+		t.Errorf("the file just written does not load: %v", err)
 	}
 }

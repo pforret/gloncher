@@ -108,6 +108,7 @@ launcher options (handled by this script):
   -h, --help      print this help and exit
 
 program options (passed to the binary):
+  -i, --init      write a commented template INI file (default gloncher.ini)
   -c, --check     parse the INI file, print what it would run, and exit
   -v, --version   print version and exit
 

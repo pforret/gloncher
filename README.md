@@ -63,6 +63,17 @@ first use, so it works straight after a clone with no build step.
 
 ## The INI file
 
+Start from a commented template rather than a blank file:
+
+```sh
+gloncher --init            # writes gloncher.ini
+gloncher --init myapp.ini  # or pick the name
+```
+
+The generated file documents every key, runs as-is (the sample programs are
+plain shell loops), and has real-world commands next to them, commented out.
+It will not overwrite a file that already exists.
+
 One section per program; section order is screen order. An optional
 `[gloncher]` section holds global settings.
 
@@ -194,6 +205,16 @@ bumps rather than on every change.
 ## Flags
 
 ```
-gloncher -check my-app.ini    parse the file, print what it would run, and exit
-gloncher -version             print the version
+-i, --init      write a commented template INI file (default gloncher.ini)
+-c, --check     parse the file, print what it would run, and exit
+-v, --version   print the version
+-h, --help      print help
+```
+
+The launcher script adds two of its own, which it handles before the binary
+sees them:
+
+```
+-w, --which     print the path of the binary that would run
+-B, --build     rebuild from source before running
 ```
