@@ -2,9 +2,12 @@
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pforret/gloncher)
 ![GitHub repo size](https://img.shields.io/github/repo-size/pforret/gloncher)
 ![GitHub last commit](https://img.shields.io/github/last-commit/pforret/gloncher)
-![GitHub language](https://img.shields.io/github/languages/top/pforret/gloncher)
 ![GitHub license](https://img.shields.io/github/license/pforret/gloncher)
-![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)
+
+![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
+![Windows](https://img.shields.io/badge/Windows-0078D4?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4OCA4OCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMTIuNCAzNS43IDcuNXYzNC41SDB6TTQwLjEgNi45IDg3LjQgMHY0MS42SDQwLjF6TTAgNDYuNGgzNS43djM0LjZMMCA3Ni4xek00MC4xIDQ2LjRIODcuNFY4OGwtNDcuMy02LjV6Ii8+PC9zdmc+Cg==) &bull; thanks to ![Go](https://img.shields.io/github/go-mod/go-version/pforret/gloncher?logo=go&logoColor=white&label=go&color=00ADD8)
+
 
 # gloncher
 
