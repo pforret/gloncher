@@ -4,6 +4,7 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/pforret/gloncher)
 ![GitHub language](https://img.shields.io/github/languages/top/pforret/gloncher)
 ![GitHub license](https://img.shields.io/github/license/pforret/gloncher)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey)
 
 # gloncher
 
