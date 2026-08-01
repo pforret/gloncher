@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -28,6 +27,14 @@ const shutdownGrace = 5 * time.Second
 
 // defaultTemplateName is what -init writes when given no file name.
 const defaultTemplateName = "gloncher.ini"
+
+// Header fields for the usage block, mirroring the bashew script layout.
+const (
+	programName = "gloncher"
+	author      = "peter@forret.com"
+	description = "run several programs at once in one terminal screen"
+	homepage    = "https://github.com/pforret/gloncher"
+)
 
 func main() {
 	if err := run(); err != nil {
@@ -51,11 +58,18 @@ func run() error {
 	check := boolFlag("check", "c", "parse the INI file and exit")
 	showHelp := boolFlag("help", "h", "print this help and exit")
 	initFile := boolFlag("init", "i", "write a commented template INI file and exit")
+	prompt := boolFlag("prompt", "p", "print a coding-agent prompt for configuring this project and exit")
 	flag.Usage = usage
 	flag.Parse()
 
 	if *showHelp {
 		usage()
+		return nil
+	}
+	// Printed to stdout, not stderr like the usage: the point is to pipe it
+	// into an agent, or into pbcopy.
+	if *prompt {
+		fmt.Print(config.Prompt)
 		return nil
 	}
 	if *initFile {
@@ -224,20 +238,39 @@ func describe(cfg *config.Config) {
 	}
 }
 
+// usage prints help in the same shape as pforret's bash scripts (bashew,
+// setver): a Program/Updated/Description header, a one-line synopsis, then one
+// aligned line per flag and parameter.
 func usage() {
-	fmt.Fprint(os.Stderr, strings.TrimLeft(`
-gloncher — run several programs at once in one terminal screen
+	out := os.Stderr
+	fmt.Fprintf(out, "Program: %s %s by %s\n", programName, version, author)
+	if built := buildTime(); !built.IsZero() {
+		fmt.Fprintf(out, "Updated: %s\n", built.Format(time.ANSIC))
+	}
+	fmt.Fprintf(out, "Description: %s\n", description)
+	fmt.Fprintf(out, "Homepage: %s\n", homepage)
+	fmt.Fprintf(out, "Usage: %s [-h] [-v] [-c] [-i] [-p] <input.ini?>\n", programName)
+	fmt.Fprintln(out, "Flags, options and parameters:")
+	fmt.Fprintln(out, "    -h|--help        : [flag] show usage [default: off]")
+	fmt.Fprintln(out, "    -v|--version     : [flag] show version and exit [default: off]")
+	fmt.Fprintln(out, "    -c|--check       : [flag] parse the ini file, show what it would run [default: off]")
+	fmt.Fprintln(out, "    -i|--init        : [flag] write a commented template ini file [default: off]")
+	fmt.Fprintln(out, "    -p|--prompt      : [flag] print a prompt for a coding agent to configure this project [default: off]")
+	fmt.Fprintf(out, "    <input>          : [parameter] ini file to run (with --init: file to write) [default: %s]\n", defaultTemplateName)
+	fmt.Fprintln(out, "Keys, while running:")
+	fmt.Fprintln(out, "    q|ctrl-c         : stop every program and quit")
+}
 
-usage:
-  gloncher [flags] <name.ini>
-
-flags:
-  -i, --init      write a commented template INI file (default gloncher.ini)
-  -c, --check     parse the INI file, print what it would run, and exit
-  -v, --version   print version and exit
-  -h, --help      print this help and exit
-
-keys:
-  q, ctrl-c       stop every program and quit
-`, "\n"))
+// buildTime reports when the running binary was last written, so the header can
+// show an Updated: line the way the bash scripts do with their own mtime.
+func buildTime() time.Time {
+	exe, err := os.Executable()
+	if err != nil {
+		return time.Time{}
+	}
+	fi, err := os.Stat(exe)
+	if err != nil {
+		return time.Time{}
+	}
+	return fi.ModTime()
 }

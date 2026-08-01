@@ -209,11 +209,37 @@ bumps rather than on every change.
 
 ## Flags
 
+`gloncher -h` prints:
+
 ```
--i, --init      write a commented template INI file (default gloncher.ini)
--c, --check     parse the file, print what it would run, and exit
--v, --version   print the version
--h, --help      print help
+Program: gloncher 0.2.0 by peter@forret.com
+Updated: Sat Aug  1 09:59:32 2026
+Description: run several programs at once in one terminal screen
+Homepage: https://github.com/pforret/gloncher
+Usage: gloncher [-h] [-v] [-c] [-i] [-p] <input.ini?>
+Flags, options and parameters:
+    -h|--help        : [flag] show usage [default: off]
+    -v|--version     : [flag] show version and exit [default: off]
+    -c|--check       : [flag] parse the ini file, show what it would run [default: off]
+    -i|--init        : [flag] write a commented template ini file [default: off]
+    -p|--prompt      : [flag] print a prompt for a coding agent to configure this project [default: off]
+    <input>          : [parameter] ini file to run (with --init: file to write) [default: gloncher.ini]
+Keys, while running:
+    q|ctrl-c         : stop every program and quit
+```
+
+### Let an agent write the config
+
+`--prompt` writes a brief to stdout that explains gloncher and every INI key,
+and tells a coding agent to inspect the project it is in — `composer.json`,
+`package.json`, `pyproject.toml`, `docker-compose.yml` — and build a config from
+what it actually finds. It knows the usual shape of a Laravel, Symfony, Django
+or Flask stack, and the conventions worth applying (`on_exit = quit` for the web
+server, `restart` for workers, `show = no` for asset builders, an `ERROR` filter
+on the log tail).
+
+```sh
+gloncher --prompt | claude          # or pbcopy, or > PROMPT.md
 ```
 
 The launcher script adds two of its own, which it handles before the binary

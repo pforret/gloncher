@@ -287,3 +287,25 @@ func TestWriteTemplateThenLoad(t *testing.T) {
 		t.Errorf("the file just written does not load: %v", err)
 	}
 }
+
+// The agent prompt describes the INI format from memory, so it can go stale the
+// moment a key is renamed. Assert that every key the parser understands is
+// named in it, and that nothing it names has been dropped.
+func TestPromptCoversEveryKey(t *testing.T) {
+	keys := []string{
+		"title", "dir", "refresh",
+		"cmd", "lines", "show", "width", "filter", "env", "color", "shell", "on_exit",
+		"keep", "restart", "quit", "full", "half",
+	}
+	for _, k := range keys {
+		if !strings.Contains(Prompt, k) {
+			t.Errorf("Prompt never mentions %q", k)
+		}
+	}
+	// Everything the prompt tells an agent to run must still be a real flag.
+	for _, cmd := range []string{"gloncher -c ", "gloncher -i ", "gloncher dev.ini"} {
+		if !strings.Contains(Prompt, cmd) {
+			t.Errorf("Prompt no longer shows %q", cmd)
+		}
+	}
+}
