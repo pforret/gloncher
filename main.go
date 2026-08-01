@@ -33,12 +33,27 @@ func main() {
 	}
 }
 
+// boolFlag registers a flag under both its long and short name. Go's flag
+// package accepts one or two leading dashes for either, so this gives all of
+// -v, --v, -version and --version.
+func boolFlag(long, short, usage string) *bool {
+	v := new(bool)
+	flag.BoolVar(v, long, false, usage)
+	flag.BoolVar(v, short, false, usage+" (shorthand)")
+	return v
+}
+
 func run() error {
-	showVersion := flag.Bool("version", false, "print version and exit")
-	check := flag.Bool("check", false, "parse the INI file and exit")
+	showVersion := boolFlag("version", "v", "print version and exit")
+	check := boolFlag("check", "c", "parse the INI file and exit")
+	showHelp := boolFlag("help", "h", "print this help and exit")
 	flag.Usage = usage
 	flag.Parse()
 
+	if *showHelp {
+		usage()
+		return nil
+	}
 	if *showVersion {
 		fmt.Println("gloncher", version)
 		return nil
@@ -202,10 +217,11 @@ usage:
   gloncher [flags] <name.ini>
 
 flags:
-  -check      parse the INI file, print what it would run, and exit
-  -version    print version and exit
+  -c, --check     parse the INI file, print what it would run, and exit
+  -v, --version   print version and exit
+  -h, --help      print this help and exit
 
 keys:
-  q, ctrl-c   stop every program and quit
+  q, ctrl-c       stop every program and quit
 `, "\n"))
 }

@@ -34,18 +34,23 @@ here="$(dirname "$self")"
 root="$here"
 [[ "$(basename "$here")" == "bin" ]] && root="$(dirname "$here")"
 
-case "$(uname -s)" in
-  Darwin)                     os="darwin"  ;;
-  Linux)                      os="linux"   ;;
-  CYGWIN* | MINGW* | MSYS*)   os="windows" ;;
-  *) echo "gloncher: unsupported OS $(uname -s)" >&2; exit 1 ;;
-esac
+platform() {
+  local os arch
+  case "$(uname -s)" in
+    Darwin)                     os="darwin"  ;;
+    Linux)                      os="linux"   ;;
+    CYGWIN* | MINGW* | MSYS*)   os="windows" ;;
+    *) echo "gloncher: unsupported OS $(uname -s)" >&2; return 1 ;;
+  esac
+  case "$(uname -m)" in
+    x86_64 | amd64)   arch="amd64" ;;
+    arm64 | aarch64)  arch="arm64" ;;
+    *) echo "gloncher: unsupported architecture $(uname -m)" >&2; return 1 ;;
+  esac
+  printf '%s %s\n' "$os" "$arch"
+}
 
-case "$(uname -m)" in
-  x86_64 | amd64)   arch="amd64" ;;
-  arm64 | aarch64)  arch="arm64" ;;
-  *) echo "gloncher: unsupported architecture $(uname -m)" >&2; exit 1 ;;
-esac
+read -r os arch <<< "$(platform)"
 
 name="gloncher-${os}-${arch}"
 plain="gloncher"
@@ -54,31 +59,108 @@ if [[ "$os" == "windows" ]]; then
   plain="gloncher.exe"
 fi
 
-# Release bundles carry per-platform names; a plain `make build` in a checkout
-# produces ./gloncher. Accept either, so both layouts work.
-for candidate in \
-  "$root/$name" "$root/binaries/$name" "$root/dist/$name" "$root/bin/$name" \
-  "$root/$plain" "$root/dist/$plain"
-do
-  # Never exec ourselves: release bundles symlink dist/gloncher to this script,
-  # which would otherwise recurse forever when the platform binary is missing.
-  if [[ -x "$candidate" && -f "$candidate" && ! "$candidate" -ef "$self" ]]; then
-    exec "$candidate" "$@"
+# find_binary echoes the binary this platform should run, or nothing if there
+# is none yet. Release bundles carry per-platform names; a plain `make build`
+# in a checkout produces ./gloncher. Accept either, so both layouts work, and
+# prefer a local build over the committed one so a developer's own binary is
+# never shadowed by a stale copy.
+find_binary() {
+  local candidate
+  for candidate in \
+    "$root/$name" "$root/binaries/$name" "$root/dist/$name" "$root/bin/$name" \
+    "$root/$plain" "$root/dist/$plain"
+  do
+    # Never return ourselves: release bundles symlink dist/gloncher to this
+    # script, which would otherwise recurse forever.
+    if [[ -x "$candidate" && -f "$candidate" && ! "$candidate" -ef "$self" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# build compiles the binary for this platform, if there is a toolchain and a
+# source tree to build from.
+build() {
+  if [[ ! -f "$root/go.mod" ]]; then
+    echo "gloncher: no source tree at $root to build from" >&2
+    return 1
   fi
+  if ! command -v go >/dev/null 2>&1; then
+    echo "gloncher: no Go toolchain to build with" >&2
+    return 1
+  fi
+  echo "gloncher: building ${name}..." >&2
+  (cd "$root" && go build -o "$name" .)
+}
+
+launcher_help() {
+  cat <<EOF
+gloncher — run several programs at once in one terminal screen
+
+usage:
+  gloncher [options] <name.ini>
+
+launcher options (handled by this script):
+  -w, --which     print the path of the binary that would run, and exit
+  -B, --build     rebuild the binary from source before running
+  -h, --help      print this help and exit
+
+program options (passed to the binary):
+  -c, --check     parse the INI file, print what it would run, and exit
+  -v, --version   print version and exit
+
+keys:
+  q, ctrl-c       stop every program and quit
+
+platform: ${os}/${arch}
+binary:   $(find_binary || echo "none built yet")
+EOF
+}
+
+force_build="false"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h | --help)
+      launcher_help
+      exit 0
+      ;;
+    -w | --which)
+      binary="$(find_binary)" || { echo "gloncher: no binary for ${os}/${arch}" >&2; exit 1; }
+      printf '%s\n' "$binary"
+      exit 0
+      ;;
+    -B | --build)
+      force_build="true"
+      shift
+      ;;
+    --)
+      # Everything after -- belongs to the binary.
+      shift
+      break
+      ;;
+    *)
+      # Not ours: hand it and the rest to the binary.
+      break
+      ;;
+  esac
 done
 
-# Nothing prebuilt. In a source checkout with Go available — which is what
-# basher installs — build it once, then exec it. Beats telling someone to run
-# a command we could have run ourselves.
-if [[ -f "$root/go.mod" ]] && command -v go >/dev/null 2>&1; then
-  echo "gloncher: first run, building ${name}..." >&2
-  if (cd "$root" && go build -o "$name" .); then
-    exec "$root/$name" "$@"
-  fi
-  echo "gloncher: build failed" >&2
-  exit 1
+if [[ "$force_build" == "true" ]]; then
+  build || exit 1
 fi
 
-echo "gloncher: no binary for ${os}/${arch} (looked for $name in $root)" >&2
-echo "build one with: make build   — or: make release for all platforms" >&2
-exit 1
+if ! binary="$(find_binary)"; then
+  # Nothing prebuilt for this platform. In a source checkout with Go
+  # available, build it once — beats telling someone to run a command we
+  # could have run ourselves.
+  build || {
+    echo "gloncher: no binary for ${os}/${arch} (looked for $name in $root)" >&2
+    echo "build one with: make build   — or: make release for all platforms" >&2
+    exit 1
+  }
+  binary="$(find_binary)"
+fi
+
+exec "$binary" "$@"
