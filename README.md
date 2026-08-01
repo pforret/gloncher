@@ -1,4 +1,9 @@
 [![basher install](https://www.basher.it/assets/logo/basher_install.svg)](https://www.basher.it/package/)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/pforret/gloncher)
+![GitHub repo size](https://img.shields.io/github/repo-size/pforret/gloncher)
+![GitHub last commit](https://img.shields.io/github/last-commit/pforret/gloncher)
+![GitHub language](https://img.shields.io/github/languages/top/pforret/gloncher)
+![GitHub license](https://img.shields.io/github/license/pforret/gloncher)
 
 # gloncher
 
