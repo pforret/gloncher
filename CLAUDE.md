@@ -79,9 +79,15 @@ and `npm run dev` both spawn grandchildren that outlive a plain `Kill()` on the 
 Cross-compiled to darwin/{amd64,arm64}, linux/{amd64,arm64} and windows/amd64. `bin/gloncher`
 detects the host OS/arch and execs the matching binary, so the release layout and the names that
 script expects must stay in sync — change one, change the other. `gloncher.sh` at the repo root is
-a symlink to it, kept because the original spec and the docs name it.
+a symlink to it, kept because the original spec and the docs name it. It stays at the root rather
+than in `bin/` on purpose: two files in `bin/` would put both `gloncher` and `gloncher.sh` on the
+user's PATH.
 
-The launcher lives in `bin/` so `basher install pforret/gloncher` exposes it as `gloncher`. Basher
+The launcher lives in `bin/` so `basher install pforret/gloncher` exposes it as `gloncher`, and
+`package.sh` declares `BINS=bin/gloncher`. That declaration matters: with no `BINS`, basher globs
+`bin/*` (see its `libexec/basher-_link-bins`) and publishes *every* file in `bin/` as a PATH
+command, executable or not. Keep `bin/` to the one entry point, and add new helper scripts
+elsewhere — or they become part of the public interface by accident. Basher
 installs by symlinking the script onto PATH, so it resolves its own symlink chain (hand-rolled;
 `readlink -f` is not portable to older macOS) before looking for binaries — `${BASH_SOURCE[0]}`
 alone points at basher's bin directory, not the repo. It also refuses to exec anything that is

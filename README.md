@@ -37,7 +37,7 @@ With [basher](https://www.basher.it):
 basher install pforret/gloncher
 ```
 
-Basher puts `gloncher` on your PATH. Prebuilt binaries for macOS, Linux and
+Basher puts a single `gloncher` command on your PATH. Prebuilt binaries for macOS, Linux and
 Windows are committed to the repo, so this needs no Go toolchain. On any other
 platform the first run builds one, which does need Go.
 
