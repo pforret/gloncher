@@ -1,0 +1,5 @@
+.env
+/.claude/settings.local.json
+/.idea/
+/dist/
+/gloncher
